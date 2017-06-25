@@ -1,22 +1,15 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"html"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 
 	"github.com/line/line-bot-sdk-go/linebot"
 )
@@ -31,6 +24,7 @@ func main() {
 	port := os.Getenv("PORT")
 	addr := fmt.Sprintf(":%s", port)
 	http.ListenAndServe(addr, nil)
+
 }
 
 func callbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -49,10 +43,68 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 		if event.Type == linebot.EventTypeMessage {
 			switch message := event.Message.(type) {
 			case *linebot.TextMessage:
+<<<<<<< HEAD
 				if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(message.ID+":"+message.Text+" OK!")).Do(); err != nil {
+=======
+				if _, err = bot.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(stackoverflow(message.Text))).Do(); err != nil {
+>>>>>>> 226f8a857bab2171b54ee6347754b1eb4be434e0
 					log.Print(err)
 				}
 			}
 		}
 	}
+}
+
+//Items:
+type jsonobject struct {
+	Items []Item
+}
+
+//Item
+type Item struct {
+	Link  string `json:"link"`
+	Title string `json:"title"`
+}
+
+func stackoverflow(input string) string {
+
+	root := "http://api.stackexchange.com/2.2/similar"
+	para := "?page=1&pagesize=1&order=desc&sort=relevance&site=stackoverflow&title=" + url.QueryEscape(input)
+
+	stackoverflowEndPoint := root + para
+
+	resp, err := http.Get(stackoverflowEndPoint)
+	if err != nil {
+		log.Println(err)
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println(err)
+	}
+
+	var i jsonobject
+	err = json.Unmarshal(body, &i)
+	if err != nil {
+		log.Println(err)
+	}
+
+	var ret string
+
+	if len(i.Items) == 0 {
+		ret = "Sorry, I can't find relevant solutions, please specify your question."
+	} else {
+		ret = html.UnescapeString(i.Items[0].Title) + " " + i.Items[0].Link
+	}
+
+	if len(ret) == 0 {
+		ret = "Sorry, I can't find relevant solutions, please specify your question."
+	}
+
+	if strings.ToLower(input) == "hello" {
+		ret = input + " +1"
+	}
+
+	return ret
 }
