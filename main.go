@@ -13,7 +13,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -29,7 +28,7 @@ func main() {
 	log.Println("Bot:", bot, " err:", err)
 	http.HandleFunc("/callback", callbackHandler)
 	port := os.Getenv("PORT")
-	addr := fmt.Sprintf(":%s", port)
+	addr := port
 	http.ListenAndServe(addr, nil)
 }
 
